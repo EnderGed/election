@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wybory Prezydenckie w Polsce 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Wprowadzenie: Text (HTML). Goal: Context. Interaction: Read.
+        - Kandydaci (List): Grid of cards (HTML/Tailwind). Goal: Overview, Navigation. Interaction: Click to view details.
+        - Kandydaci (Details): Structured text, accordions for detailed sections (HTML/Tailwind/JS). Goal: In-depth info. Interaction: Expand/collapse accordions.
+        - Sondaże: Bar chart (Chart.js/Canvas) with text summary. Goal: Visualize support levels. Interaction: View chart, hover for tooltips.
+        - Podsumowanie: Text (HTML). Goal: Conclude. Interaction: Read.
+        - Justification: Chosen methods are standard, accessible, and effective for presenting textual and simple quantitative data without relying on SVG/Mermaid, aligning with user expectations for an informational web app.
+        - Libraries: Chart.js for polls.
+        -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 500px;
+            }
+        }
+        .accordion-content {
+            display: none;
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+        }
+        .accordion-button.active .arrow {
+            transform: rotate(180deg);
+        }
+        .arrow {
+            transition: transform 0.3s ease-out;
+        }
+        /* Custom scrollbar for candidate details if content overflows */
+        .candidate-detail-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .candidate-detail-content::-webkit-scrollbar-track {
+            background: #f1f5f9; /* slate-100 */
+            border-radius: 10px;
+        }
+        .candidate-detail-content::-webkit-scrollbar-thumb {
+            background: #94a3b8; /* slate-400 */
+            border-radius: 10px;
+        }
+        .candidate-detail-content::-webkit-scrollbar-thumb:hover {
+            background: #64748b; /* slate-500 */
+        }
+        .nav-button.active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+        }
+        .nav-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .candidate-card {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .candidate-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div class="flex flex-col sm:flex-row justify-between items-center">
+                <h1 class="text-2xl font-bold text-blue-700 mb-2 sm:mb-0">Wybory Prezydenckie 2025</h1>
+                <div class="flex flex-wrap justify-center space-x-1 sm:space-x-2">
+                    <button data-section="intro" class="nav-button text-sm sm:text-base px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white">Wprowadzenie</button>
+                    <button data-section="candidates" class="nav-button text-sm sm:text-base px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white active">Kandydaci</button>
+                    <button data-section="polls" class="nav-button text-sm sm:text-base px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white">Sondaże</button>
+                    <button data-section="summary" class="nav-button text-sm sm:text-base px-3 py-2 rounded-md hover:bg-blue-500 hover:text-white">Podsumowanie</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <section id="intro" class="content-section hidden bg-white p-6 rounded-lg shadow">
+            <h2 class="text-3xl font-semibold text-slate-700 mb-6 border-b pb-2">Wprowadzenie do Wyborów Prezydenckich w Polsce 2025</h2>
+            <div class="space-y-4 text-slate-700">
+                <p>Ta sekcja przedstawia podstawowe informacje dotyczące nadchodzących wyborów prezydenckich w Polsce. Znajdziesz tu szczegóły na temat daty wyborów, potencjalnej drugiej tury oraz kluczowej roli i uprawnień Prezydenta Rzeczypospolitej Polskiej w systemie politycznym kraju. Zrozumienie tych aspektów jest fundamentalne dla świadomego udziału w procesie wyborczym.</p>
+                <h3 class="text-xl font-semibold mt-4">Kontekst i data wyborów</h3>
+                <p>Wybory prezydenckie w Polsce, które wyłonią głowę państwa na kolejną kadencję, odbędą się w niedzielę, 18 maja 2025 roku. Lokale wyborcze będą otwarte dla głosujących w godzinach od 7:00 do 21:00. Data ta została oficjalnie potwierdzona w kalendarzu wyborczym opublikowanym przez Państwową Komisję Wyborczą (PKW).</p>
+                <p>Polski system wyborczy przewiduje możliwość przeprowadzenia drugiej tury głosowania. Stanie się tak, jeśli żaden z kandydatów nie zdoła uzyskać bezwzględnej większości głosów (ponad 50%) w pierwszym terminie. Wówczas, dwa tygodnie później, 1 czerwca 2025 roku, Polacy ponownie pójdą do urn, aby wybrać prezydenta spośród dwóch kandydatów, którzy uzyskali najwyższe poparcie w pierwszej turze.</p>
+
+                <h3 class="text-xl font-semibold mt-4">Rola i znaczenie urzędu Prezydenta RP</h3>
+                <p>Urząd Prezydenta Rzeczypospolitej Polskiej, choć w systemie parlamentarno-gabinetowym nie posiada pełni władzy wykonawczej, odgrywa kluczową rolę w polskim systemie politycznym. Konstytucja RP przyznaje głowie państwa szereg istotnych uprawnień:</p>
+                <ul class="list-disc list-inside ml-4 space-y-1">
+                    <li>Jest najwyższym przedstawicielem Rzeczypospolitej Polskiej i gwarantem ciągłości władzy państwowej.</li>
+                    <li>Sprawuje zwierzchnictwo nad Siłami Zbrojnymi.</li>
+                    <li>Reprezentuje państwo w stosunkach zewnętrznych, ratyfikuje i wypowiada umowy międzynarodowe.</li>
+                    <li>Posiada prawo weta ustawodawczego (może być uchylone przez Sejm większością 3/5 głosów).</li>
+                    <li>Może kierować ustawy do Trybunału Konstytucyjnego.</li>
+                    <li>Przysługuje mu inicjatywa ustawodawcza.</li>
+                    <li>Mianuje sędziów, powołuje Prezesa NSA, Pierwszego Prezesa SN oraz Prezesa TK.</li>
+                </ul>
+                <p>Znaczenie urzędu Prezydenta RP wykracza poza formalne kompetencje. Aktywność prezydenta, jego autorytet oraz sposób wykorzystywania uprawnień mogą realnie wpływać na proces legislacyjny, stabilność rządu oraz kierunki polityki państwa. Dlatego wybory prezydenckie są postrzegane jako wydarzenie o doniosłym znaczeniu.</p>
+            </div>
+        </section>
+
+        <section id="candidates" class="content-section bg-white p-6 rounded-lg shadow">
+            <h2 class="text-3xl font-semibold text-slate-700 mb-6 border-b pb-2">Kandydaci w Wyborach Prezydenckich 2025</h2>
+            <p class="mb-6 text-slate-700">W tej sekcji prezentujemy listę oficjalnie zarejestrowanych kandydatów na urząd Prezydenta RP. Kliknij na kartę kandydata, aby zobaczyć jego szczegółowy profil, w tym przynależność partyjną, kluczowe punkty programu wyborczego, argumenty zwolenników i przeciwników oraz najważniejsze kontrowersje. Proces rejestracji zakończył się 4 kwietnia 2025, a PKW zarejestrowała 13 kandydatów.</p>
+            <div id="candidate-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </div>
+            <div id="candidate-detail-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 hidden z-50">
+                <div class="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <h3 id="candidate-detail-name" class="text-2xl font-bold text-blue-700"></h3>
+                        <button id="close-candidate-detail" class="text-slate-500 hover:text-slate-700 text-2xl font-bold">&times;</button>
+                    </div>
+                    <div id="candidate-detail-content" class="overflow-y-auto space-y-4 text-slate-700 candidate-detail-content pr-2">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="polls" class="content-section hidden bg-white p-6 rounded-lg shadow">
+            <h2 class="text-3xl font-semibold text-slate-700 mb-6 border-b pb-2">Analiza Sondaży Przedwyborczych</h2>
+            <div class="space-y-4 text-slate-700">
+                <p>Sondaże opinii publicznej dostarczają cennych informacji o potencjalnych wynikach wyborów i preferencjach wyborców. Poniżej przedstawiamy wizualizację oraz krótkie omówienie wyników sondaży przeprowadzonych w okresie kwiecień-maj 2025. Należy pamiętać, że sondaże są migawką nastrojów społecznych i mogą ulegać zmianom.</p>
+                <div class="chart-container my-8">
+                    <canvas id="pollsChart"></canvas>
+                </div>
+                <p>Zdecydowana większość sondaży wskazuje, że największym poparciem cieszy się Rafał Trzaskowski (Koalicja Obywatelska), z wynikami oscylującymi w granicach 29-33%. Na drugim miejscu regularnie plasuje się Karol Nawrocki (wspierany przez Prawo i Sprawiedliwość), z poparciem w przedziale 22-28%. Na trzecim miejscu w większości badań znajduje się Sławomir Mentzen (Konfederacja), z poparciem wahającym się od 11,8% do 16%.</p>
+                <p>Kolejne miejsca zajmują Magdalena Biejat (Nowa Lewica) oraz Szymon Hołownia (Trzecia Droga), notujący poparcie zazwyczaj w przedziale 5-8%. Adrian Zandberg (Partia Razem) może liczyć na głosy około 4-7% wyborców. Pozostali kandydaci uzyskują poparcie poniżej 4%.</p>
+                <p>Sondaż Opinia24 dla "Newsweeka" z maja 2025 (dotyczący hipotetycznej drugiej tury) dawał Rafałowi Trzaskowskiemu 53% głosów, a Karolowi Nawrockiemu 45%.</p>
+                <p>Prawdopodobieństwo drugiej tury jest bardzo wysokie. Ostateczny wynik wyborów będzie zależał od mobilizacji elektoratów oraz od tego, jak rozłożą się głosy wyborców kandydatów, którzy odpadną po pierwszej turze.</p>
+            </div>
+        </section>
+
+        <section id="summary" class="content-section hidden bg-white p-6 rounded-lg shadow">
+            <h2 class="text-3xl font-semibold text-slate-700 mb-6 border-b pb-2">Podsumowanie i Perspektywy</h2>
+            <div class="space-y-4 text-slate-700">
+                <p>Ta sekcja podsumowuje kluczowe aspekty nadchodzących wyborów prezydenckich w Polsce w 2025 roku. Analizujemy tu główne trendy, potencjalne scenariusze oraz znaczenie tych wyborów dla przyszłości kraju. Wybory te, z uwagi na szerokie spektrum kandydatów i polaryzację sceny politycznej, będą miały istotny wpływ na kierunki rozwoju Polski.</p>
+                <p>Wybory prezydenckie w Polsce, zaplanowane na 18 maja 2025 roku, rysują się jako kluczowe wydarzenie polityczne. Zarejestrowanie trzynastu kandydatów odzwierciedla szerokie spektrum poglądów obecnych w polskim społeczeństwie.</p>
+                <p>Rafał Trzaskowski i Karol Nawrocki jawią się jako główni pretendenci, co potwierdzają sondaże. Ich programy odwołują się do szerokich grup wyborców. Sławomir Mentzen konsekwentnie buduje pozycję lidera prawicy wolnościowej. Kandydaci lewicy (Magdalena Biejat, Adrian Zandberg) oraz centrum (Szymon Hołownia) walczą o zmobilizowanie swoich elektoratów.</p>
+                <p>Pozostali kandydaci, jak Grzegorz Braun, Krzysztof Stanowski, Joanna Senyszyn, Marek Jakubiak, Artur Bartoszewicz, Maciej Maciak czy Marek Woch, odgrywają bardziej specyficzne role, nagłaśniając swoje, często niszowe, postulaty lub prowadząc kampanie o nietypowym charakterze.</p>
+                <p>Kluczowym aspektem jest wysokie prawdopodobieństwo drugiej tury. Ostateczne zwycięstwo będzie zależeć od zdolności kandydatów do mobilizacji własnych zwolenników oraz przekonania do siebie wyborców, których faworyci odpadli w pierwszym głosowaniu. Istotne staną się nie tylko programy, ale również wiarygodność i zdolność do budowania kompromisu.</p>
+                <p>Wynik wyborów prezydenckich będzie miał fundamentalne znaczenie dla przyszłości Polski, określając nie tylko osobę piastującą najwyższy urząd w państwie, ale także wpływając na równowagę sił politycznych i kierunki strategicznego rozwoju kraju.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-800 text-white text-center py-6 mt-12">
+        <p>&copy; 2025 Analiza Wyborów Prezydenckich w Polsce. Aplikacja informacyjna.</p>
+        <p class="text-sm text-slate-400">Dane na podstawie raportu z dnia 17 maja 2025.</p>
+    </footer>
+
+<script>
+    const candidateData = [
+        {
+            id: "bartoszewicz",
+            numerNaKarcie: "1",
+            nazwiskoImiona: "BARTOSZEWICZ Artur",
+            wiek: 51,
+            partia: "Społeczny Interes (wsparcie)",
+            program: [
+                "Opracowanie nowej konstytucji (weto obywatelskie, wiążące referenda).",
+                "Likwidacja finansowania partii z budżetu.",
+                "Odpowiedzialność majątkowa polityków i urzędników.",
+                "Zakaz zatrudniania członków partii i ich rodzin w spółkach Skarbu Państwa.",
+                "Powiązanie liczby posłów z liczbą obywateli.",
+                "Stypendium demograficzne na każde dziecko.",
+                "Ochrona polskiej ziemi, wspieranie krajowej produkcji (broń, leki, żywność).",
+                "Wizja 'odbudowy imperium RP', pełny dostęp do broni dla obywateli.",
+                "Zmiana hymnu na 'Rotę', przywrócenie godła z lat 1919–1927.",
+                "Ambitne programy strategiczne: AI (750 mld PLN), elektrownie jądrowe (500 mld PLN), porty i KDP (10 750 mld PLN), CPK (150 mld PLN), program obronny z lotniskowcem (10 000 mld PLN), program kosmiczny (250 mld PLN)."
+            ],
+            pochwaly: [
+                "Brak wcześniejszego zaangażowania w politykę partyjną (atut).",
+                "Szybkie zebranie 250 tys. podpisów.",
+                "Doświadczenie jako doradca ministrów zdrowia (Religa, Zembala), członek NCBR.",
+                "Propozycje głębokich zmian systemowych (de-partycypacja państwa).",
+                "Ambitne, 'imperialne' wizje rozwoju mogą być pociągające dla części elektoratu."
+            ],
+            krytyka: [
+                "Radykalizm niektórych postulatów ('odbudowa imperium RP', zmiana symboli) jako nierealistyczne i nacjonalistyczne.",
+                "Ogromna skala finansowa programów strategicznych budzi pytania o realność i źródła finansowania.",
+                "Brak szerokiego zaplecza politycznego i doświadczenia w administracji centralnej."
+            ],
+            skandale: [
+                "Brak informacji o bezpośrednich skandalach personalnych czy korupcyjnych.",
+                "Potencjalne kontrowersje mogą wynikać z radykalnego charakteru programu."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=AB"
+        },
+        {
+            id: "biejat",
+            numerNaKarcie: "2",
+            nazwiskoImiona: "BIEJAT Magdalena Agnieszka",
+            wiek: 43,
+            partia: "Nowa Lewica (poparcie)",
+            program: [
+                "Hasło: 'Łączy nas więcej'. 7 filarów: dobrobyt, rozwój, bezpieczeństwo, współpraca, wolność, równość, praworządność.",
+                "Dobrobyt: ochrona praw pracowniczych, realna progresja podatkowa, wetowanie ustaw niekorzystnych dla pracowników, działania na rzecz zmniejszenia rat kredytów.",
+                "Rozwój: inwestycje publiczne (KDP, atom, OZE), wspieranie AI, zwiększenie inwestycji prywatnych.",
+                "Bezpieczeństwo: militarne, współpraca międzynarodowa, bezpieczeństwo codzienne.",
+                "Wolność: priorytet praw kobiet, legalizacja aborcji do 12. tygodnia, ułaskawianie za pomoc w aborcji, równy i płatny urlop rodzicielski.",
+                "Równość: równość małżeńska (minimum: związki partnerskie), wyrównanie płac kobiet i mężczyzn.",
+                "Praworządność: prezydent jako strażnik konstytucji, uporządkowanie chaosu ustrojowego, weryfikacja nominacji sędziowskich (2018-2025).",
+                "Polityka mieszkaniowa: wetowanie dopłat do kredytów, podatek katastralny od trzeciej nieruchomości na fundusz budownictwa społecznego.",
+                "Transformacja energetyczna i walka ze zmianami klimatu."
+            ],
+            pochwaly: [
+                "Konsekwentne i jednoznaczne stanowisko w obronie praw kobiet i mniejszości.",
+                "Konkretne propozycje rozwiązań problemów społecznych (np. kryzys mieszkaniowy).",
+                "Podkreślanie potrzeby inwestycji w usługi publiczne, rozwój technologiczny, zieloną transformację.",
+                "Doświadczenie parlamentarne (wicemarszałkini Senatu).",
+                "Progresywny i nowoczesny program, próba dotarcia do młodych wyborców."
+            ],
+            krytyka: [
+                "Zarzuty od Adriana Zandberga o brak stanowczości w koalicji rządzącej (składka zdrowotna, budżet na ochronę zdrowia).",
+                "Głosy o 'wyjściu przed szereg' ws. oceny działań wiceministra Szejny (napięcia w Lewicy).",
+                "Wcześniejsze zarzuty o rzekome przyspieszanie procedur legislacyjnych (IX kadencja Sejmu)."
+            ],
+            skandale: [
+                "Brak skandali korupcyjnych czy obyczajowych.",
+                "Kontrowersje dotyczą działalności politycznej, relacji wewnątrz Lewicy, realizacji programu w koalicji."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=MB"
+        },
+        {
+            id: "braun",
+            numerNaKarcie: "3",
+            nazwiskoImiona: "BRAUN Grzegorz Michał",
+            wiek: 58,
+            partia: "Konfederacja Korony Polskiej",
+            program: [
+                "'Dobrze przygotowany Polexit', odrzucenie 'Zielonego Ładu' ('klimatyczne kłamstwo').",
+                "Sprzeciw wobec wysłania polskich żołnierzy na Ukrainę.",
+                "Obrona dzieci przed 'dewiantami', sprzeciw wobec 'zakłamywania historii' (Niemcy, Żydzi, 'banderowcy'), wznowienie ekshumacji w Jedwabnem.",
+                "Likwidacja PIT, CIT, PCC, ZUS. Ustawa o obcych agentach.",
+                "Niskie i proste podatki, 'uwolnienie przedsiębiorczości'.",
+                "Polityka zagraniczna wielokierunkowa, dobre relacje z sąsiadami (w tym 'most energetyczny' i 'gwarancje bezpiecznej granicy z Białorusią').",
+                "Moratorium imigracyjne, odrzucenie paktów migracyjnych, zachowanie 'homogenicznego charakteru państwa'.",
+                "'Silne państwo minimum', przywrócenie kary śmierci, nowa konstytucja (silne rządy prezydenckie).",
+                "Odtajnienie aneksu do raportu z likwidacji WSI, wyjaśnienie śmierci m.in. ks. Popiełuszki, Leppera.",
+                "'Narodowe przebudzenie', obrona rodziny, suwerenności, wolności, życia, własności, 'tradycji katolickiej'.",
+                "Zakaz operacji 'zmiany płci' u dzieci, powrót do węgla."
+            ],
+            pochwaly: [
+                "Postrzegany jako niezłomny obrońca tradycyjnych wartości katolickich, polskiej suwerenności i tożsamości narodowej.",
+                "Ceniony za bezkompromisowość, odwagę w głoszeniu poglądów, antyestablishmentową postawę.",
+                "Popularność (szczególnie na Podhalu) dzięki hasłom: Bóg, rodzina, ojczyzna; sprzeciw wobec działań pandemicznych, przymusu szczepień, aborcji; postulaty Polexitu i powrotu do węgla."
+            ],
+            krytyka: [
+                "Skrajnie prawicowe, antyeuropejskie i antyukraińskie poglądy.",
+                "Liczne agresywne zachowania (np. zgaszenie świec chanukowych gaśnicą w Sejmie).",
+                "Wypowiedzi odbierane jako ksenofobiczne, antysemickie, homofobiczne (np. o 'judaizacji', 'banderyzacji', LGBT jako 'tęczowa rewolucja', in vitro jako 'rozwiązanie z piekła rodem').",
+                "Działania takie jak 'obywatelskie zatrzymanie' lekarki ginekolog."
+            ],
+            skandale: [
+                "Zgaszenie świec chanukowych w Sejmie (grudzień 2023) – uchylenie immunitetu europosła.",
+                "Uchylenie immunitetu poselskiego (styczeń 2024) – 7 zarzutów (w tym użycie przemocy wobec Łukasza Szumowskiego).",
+                "Badanie przez prokuraturę sprawy 'obywatelskiego zatrzymania' lekarki ginekolog.",
+                "Kary finansowe od Parlamentu Europejskiego (np. za wypowiedzi o LGBTQI)."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=GB"
+        },
+        {
+            id: "holownia",
+            numerNaKarcie: "4",
+            nazwiskoImiona: "HOŁOWNIA Szymon Franciszek",
+            wiek: 48,
+            partia: "Polska 2050 Szymona Hołowni (kandydat Trzeciej Drogi)",
+            program: [
+                "Hasło: 'Program z myślą o ludziach!'. 8 punktów:",
+                "1. Rozwój po Polsku: równomierny rozwój kraju, Polska lokalna.",
+                "2. Tani prąd z polskiego słońca i wiatru: OZE, magazyny energii, atom; lasy dla ludzi, nie do spalania.",
+                "3. Mieszkania w przystępnej cenie: budownictwo społeczne, kredyty z 'normalną marżą'.",
+                "4. Polskie zbrojenia dla polskiej gospodarki: min. 50% wydatków na obronność do polskiego przemysłu.",
+                "5. Bezpieczeństwo: Polska liderem w basenie Morza Bałtyckiego, silne ogniwo europejskiego systemu bezpieczeństwa.",
+                "6. Polska 100-minutowa: transport publiczny do stolicy województwa w 100 minut.",
+                "7. Spółki Skarbu Państwa do naprawy: koniec partyjnych nominacji, zarządzanie przez fachowców.",
+                "8. Smartfony precz ze szkół: zakaz w podstawówkach, Instytut Higieny Cyfrowej.",
+                "Referendum ws. aborcji (sam przeciwny aborcji do 12. tyg. bez przyczyny). Poparcie dla związków partnerskich.",
+                "Regularne konsultacje społeczne, aktywna inicjatywa referendalna. Prezydent jako 'sołtys Polski'.",
+                "Partnerzy strategiczni: NATO, UE (szczególnie kraje nordyckie i bałtyckie). Euro – po spełnieniu warunków gospodarczych."
+            ],
+            pochwaly: [
+                "W 2020 postrzegany jako 'powiew świeżości', 'obietnica zmian'.",
+                "Jako Marszałek Sejmu oceniany jako osoba wprowadzająca 'świeżość' do parlamentu.",
+                "Program (Polska lokalna, zielona transformacja, usługi publiczne, edukacja) może przemawiać do wyborców pragmatycznych i modernizacyjnych.",
+                "Pozycjonowanie się jako prezydent ponadpartyjny, 'gwarant spraw obywateli', atrakcyjne dla centrum.",
+                "Doświadczenie jako dziennikarz, prezenter, autor książek."
+            ],
+            krytyka: [
+                "Spadek poparcia od 2020, rozczarowanie części byłych zwolenników ('Szymon się spalił', 'co innego mówi, co innego robi').",
+                "Kwestionowanie kompetencji politycznych (popularność z 'Mam talent!').",
+                "Niejasne stanowisko ws. finansowania kampanii Trzaskowskiego (domagał się wyjaśnień będąc w koalicji).",
+                "Sprawa nieruchomości na Podlasiu (pytania PiS, pozew wyborczy Hołowni)."
+            ],
+            skandale: [
+                "Afera Collegium Humanum: rozważał studia, składał dokumenty, ale twierdzi, że nie podjął studiów, nie płacił, nie uczestniczył w zajęciach po pojawieniu się wątpliwości. Zaprzecza byciu studentem, uważa się za ofiarę 'brudnej gry'.",
+                "Nieruchomości na Podlasiu – przedmiot zainteresowania PiS.",
+                "Adres e-mail mógł być na liście celów ataku hakerskiego ('afera e-mailowa') – nie skandal personalny."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=SH"
+        },
+        {
+            id: "jakubiak",
+            numerNaKarcie: "5",
+            nazwiskoImiona: "JAKUBIAK Marek",
+            wiek: 66,
+            partia: "Federacja dla Rzeczypospolitej (Wolni Republikanie)",
+            program: [
+                "Wprowadzenie systemu prezydenckiego.",
+                "Podwyższenie kwoty wolnej od podatku do 12-krotności płacy minimalnej.",
+                "Emerytura bez podatku.",
+                "Jednoprocentowy podatek przychodowy zamiast CIT, uproszczenia dla MŚP.",
+                "Likwidacja Trybunału Konstytucyjnego, wprowadzenie sędziów pokoju (spory do 50 tys. zł).",
+                "Ograniczenie inicjatywy ustawodawczej rządu (tylko obywatele, Sejm, Senat, prezydent).",
+                "Posłowie nie mogą wykonywać innych obowiązków zawodowych.",
+                "Częstsze referenda (próg ważności 30%).",
+                "Modernizacja sił zbrojnych, budowa strzelnic, rozwój lokalnych struktur obronnych.",
+                "Wsparcie dla rolnictwa i obszarów wiejskich (infrastruktura, usługi, komunikacja, przetwórstwo, handel), decentralizacja."
+            ],
+            pochwaly: [
+                "Doświadczenie jako przedsiębiorca (producent piw) – pragmatyczne podejście do gospodarki.",
+                "Postulaty (niskie podatki, uproszczenia, wsparcie MŚP) atrakcyjne dla przedsiębiorców i klasy średniej.",
+                "Nacisk na silnego prezydenta i demokrację bezpośrednią (referenda) może przemawiać do części wyborców.",
+                "Krytyka partyjniactwa i sporów politycznych."
+            ],
+            krytyka: [
+                "Kontrowersyjne, ksenofobiczne wypowiedzi, np. porównanie imigrantów do 'niepotrzebnych odpadów'.",
+                "Tendencja do wyśmiewania postulatów innych kandydatów przy braku równie poważnych własnych propozycji (np. 'nienoszenie szminek w tornistrach' vs zakaz smartfonów).",
+                "Niskie notowania w sondażach."
+            ],
+            skandale: [
+                "Wypowiedź w Telewizji Republika porównująca imigrantów do 'niepotrzebnych odpadów' – powszechne oburzenie, mowa nienawiści."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=MJ"
+        },
+        {
+            id: "maciak",
+            numerNaKarcie: "6",
+            nazwiskoImiona: "MACIAK Maciej",
+            wiek: 54,
+            partia: "Ruch Dobrobytu i Pokoju",
+            program: [
+                "Główna wartość: 'pokój'.",
+                "Warunki dla dynamicznego rozwoju gospodarczego.",
+                "Dostęp do zdrowej żywności od lokalnych, polskich rolników.",
+                "Uprzywilejowanie polskich firm wobec zagranicznych korporacji.",
+                "Budowa państwa 'poważnego, silnego, prowadzącego propolską politykę i skuteczną współpracę zagraniczną'.",
+                "Dostęp do tanich surowców energetycznych i wody.",
+                "Aktywna, propokojowa polityka zagraniczna.",
+                "Ściganie 'przestępstw przeciwko pokojowi' i 'podżegaczy wojennych'.",
+                "Weryfikacja długów publicznych.",
+                "Rozwój OZE i elektrowni szczytowo-pompowych.",
+                "Zachowanie neutralności Polski, dialog z Rosją i Białorusią."
+            ],
+            pochwaly: [
+                "Rozpoznawalność dzięki debacie w Końskich.",
+                "Konsekwentne nawoływanie do pokoju i neutralności może trafiać do części społeczeństwa.",
+                "Hasła wspierania polskich przedsiębiorców i rolników."
+            ],
+            krytyka: [
+                "Otwarta sympatia do reżimów Rosji i Białorusi (podziw dla Putina jako 'bardzo dobrego polityka').",
+                "Oskarżenia o powtarzanie rosyjskiej propagandy i dezinformacji, wspieranie celów informacyjnych Moskwy.",
+                "Kontrowersyjne wypowiedzi (np. do Putina: 'żeby się trzymał', 'robi kawał dobrej roboty').",
+                "Negatywna lub ambiwalentna opinia lokalnej społeczności we Włocławku."
+            ],
+            skandale: [
+                "Jednoznacznie prorosyjskie sympatie i wypowiedzi – powszechnie krytykowane jako sprzeczne z polską racją stanu.",
+                "Zatarg z Krzysztofem Stanowskim (zarzut śledzenia i czekania przy samochodzie)."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=MM"
+        },
+        {
+            id: "mentzen",
+            numerNaKarcie: "7",
+            nazwiskoImiona: "MENTZEN Sławomir Jerzy",
+            wiek: 38,
+            partia: "Konfederacja Wolność i Niepodległość (Nowa Nadzieja)",
+            program: [
+                "20 punktów programu:",
+                "Suwerenność: sprzeciw odbieraniu kompetencji UE, zmianom traktatów, pierwszeństwo Konstytucji, zachowanie złotego.",
+                "Silna armia: rozbudowa krajowej produkcji broni, przeszkolenie rezerwistów, zmniejszenie wpływu polityków, nigdy nie zgodzi się na wysłanie żołnierzy na Ukrainę.",
+                "Szczelne granice: obrona przed nielegalną imigracją.",
+                "Silna gospodarka: likwidacja zbędnych przepisów, zasada 'UE+0', prywatyzacja spółek Skarbu Państwa, usunięcie polityków z nich, deregulacja ('one in, one out').",
+                "Niskie i proste podatki: najprostszy system w UE, likwidacja podatku od spadków, Belki, PCC od mieszkań; uproszczenie PIT, CIT, VAT; dobrowolny ZUS dla przedsiębiorców, powrót do składki zdrowotnej sprzed Polskiego Ładu, emerytury bez PIT.",
+                "Energetyka: odrzucenie Zielonego Ładu, deregulacja produkcji energii, niższe opodatkowanie, inwestycje w atom.",
+                "Wolności obywatelskie: zatrzymanie 'lewicowej ideologii', obrona 'normalności', ochrona dzieci przed 'lewicowymi demoralizatorami', pełna wolność słowa (jak w USA), legalizacja pokera i marihuany, racjonalny dostęp do broni, sprzeciw przymusowi szczepień i inwigilacji, prawo do prywatności.",
+                "Niepodwyższanie wieku emerytalnego, reforma opieki zdrowotnej."
+            ],
+            pochwaly: [
+                "Duża popularność w internecie.",
+                "Postulaty (niskie podatki, deregulacja, ograniczenie biurokracji) atrakcyjne dla przedsiębiorców, samozatrudnionych, młodych wolnorynkowców.",
+                "Akcent na wolność osobistą, sprzeciw 'lewicowej ideologii' i 'kulturze woke' trafia do konserwatywno-liberalnego elektoratu.",
+                "Postrzegany jako dynamiczny, inteligentny, merytoryczny (zwłaszcza w ekonomii).",
+                "Pewne poparcie nawet wśród części wyborców koalicji rządzącej (mężczyźni).",
+                "Ataki na Nawrockiego mogą go pośrednio wzmacniać jako alternatywę na prawicy."
+            ],
+            krytyka: [
+                "Kontrowersyjna 'piątka Konfederacji': 'nie chcemy Żydów, homoseksualistów, aborcji, podatków i Unii Europejskiej' – regularnie przypominana.",
+                "Skrajne poglądy na aborcję (zakaz nawet w przypadku gwałtu, 'nie wolno zabijać niewinnych dzieci, nawet jeżeli to dziecko wiąże się z jakąś nieprzyjemnością').",
+                "Homofobiczny przekaz, sprzeciw związkom partnerskim, 'nakręcanie nagonki' na imigrantów.",
+                "Program krytykowany jako prowadzący do 'słabej Polski w słabej Europie', niejasne stanowisko ws. Polexitu.",
+                "Kontrowersyjna współpraca Nowej Nadziei z niemiecką AfD (oskarżaną o powiązania z Rosją, przemoc, relatywizowanie nazizmu)."
+            ],
+            skandale: [
+                "'Piątka Konfederacji' – największe obciążenie wizerunkowe.",
+                "Radykalne wypowiedzi na temat aborcji.",
+                "Bezprawne użycie wizerunku Igi Świątek przez pub firmowany jego nazwiskiem (pub przeprosił).",
+                "Wykorzystywanie jego wizerunku przez cyberoszustów (sam jest ofiarą)."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=SM"
+        },
+        {
+            id: "nawrocki",
+            numerNaKarcie: "8",
+            nazwiskoImiona: "NAWROCKI Karol Tadeusz",
+            wiek: 42,
+            partia: "Kandydat obywatelski (z poparciem PiS)",
+            program: [
+                "5 kategorii: 'Dobrobyt', 'Normalne Państwo', 'Bezpieczeństwo', 'Rozwój', 'Kontrakt podatkowy'.",
+                "Kontrakt podatkowy: obniżenie VAT z 23% do 22%, PIT 0% dla rodzin 2+, podwyższenie drugiego progu podatkowego, likwidacja podatku Belki, ulgi dla przedsiębiorców, uproszczone rozliczenia (jeden przelew PIT, ZUS, składka zdrowotna). Nie podpisze ustawy podnoszącej podatki. Konstytucyjna gwarancja dziedziczenia bez podatku. Uwolnienie od PIT wynagrodzenia za nadgodziny. Sprzeciw wobec euro.",
+                "Życie społeczne / Normalne Państwo: pierwszeństwo obywateli polskich w dostępie do usług społecznych, zdrowia, edukacji. Wypowiedzenie Zielonego Ładu i Paktu Migracyjnego. Zatrzymanie 'łatwej zmiany płci przez dzieci', sprzeciw adopcji przez pary homoseksualne i 'ideologii w szkołach'. 'Dobra edukacja' zamiast likwidacji prac domowych, szkoła bez smartfonów. Reforma sądownictwa ('sądy godne zaufania'), ochrona dzieci nienarodzonych (sprzeciw aborcji).",
+                "Bezpieczeństwo: zacieśnianie sojuszu z USA. Wydatki na obronność 5% PKB, armia 300 tys. żołnierzy. Polscy żołnierze nie na Ukrainę. Silna obrona granic przed nielegalną imigracją.",
+                "Rozwój: inwestycje infrastrukturalne w każdej gminie. Min. 5 mld zł rocznie na technologie (AI, komputery kwantowe, biotechnologia, leki). Wsparcie dla rolników."
+            ],
+            pochwaly: [
+                "Wizerunek 'kandydata obywatelskiego' – próba przyciągnięcia wyborców spoza twardego elektoratu PiS.",
+                "Program (obniżki podatków, wsparcie rodzin i seniorów) zgodny z linią PiS, może liczyć na poparcie tradycyjnych wyborców.",
+                "Akcent na bezpieczeństwo, armię, konserwatyzm światopoglądowy rezonuje z konserwatywną częścią społeczeństwa.",
+                "Obietnica kontynuacji programów patriotycznych i dbałości o pamięć historyczną.",
+                "Mógł być postrzegany jako kandydat bez mocno negatywnego wizerunku, pole do 'medialnego stworzenia' (jak Duda)."
+            ],
+            krytyka: [
+                "Mimo etykiety 'obywatelski', jednoznacznie postrzegany jako kandydat PiS – obciążenie dla części wyborców.",
+                "Na początku kampanii: brak szerokiej rozpoznawalności, niedostateczne doświadczenie kampanijne i medialne.",
+                "'Afera z kawalerką': przejęcie mieszkania od starszego, schorowanego emeryta (p. Jerzy Ż.) rzekomo w zamian za opiekę, której miał nie zapewnić. Centralny punkt ataków. Wątpliwości co do szczegółów finansowych (pożyczka na wysoki procent).",
+                "Rzekome 'kłopotliwe znajomości z przeszłości' (fotografia z osobą skazaną, 'Wielki Bu').",
+                "Zarzuty ignorowania pytań dziennikarzy o afery, próba bagatelizowania."
+            ],
+            skandale: [
+                "'Afera z kawalerką' / sprawa pana Jerzego Ż. – najpoważniejszy skandal. Zarzuty moralnie wątpliwego przejęcia mieszkania, emeryt trafił do DPS. Media ujawniły dokumenty, relacje świadków. Nawrocki odpiera zarzuty ('fake newsy', 'kłamstwa').",
+                "Kłopotliwe znajomości z przeszłości (fotografia z 'Wielkim Bu').",
+                "Podejrzenia o nielegalne finansowanie kampanii (przez konta dyskredytujące m.in. Nawrockiego) – tu raczej jako potencjalna ofiara."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=KN"
+        },
+        {
+            id: "senyszyn",
+            numerNaKarcie: "9",
+            nazwiskoImiona: "SENYSZYN Joanna",
+            wiek: 76,
+            partia: "Kandydatka niezależna",
+            program: [
+                "Silnie lewicowy i prospołeczny.",
+                "Bezpłatna publiczna opieka zdrowotna i darmowe szkolnictwo wyższe.",
+                "Sceptycyzm wobec obniżania podatków (ryzyko rezygnacji z usług publicznych).",
+                "Niższa składka zdrowotna dla osób z kompletem szczepień ochronnych.",
+                "Zwiększenie integracji europejskiej, wspólna europejska polityka obronna.",
+                "Wprowadzenie w Polsce waluty euro.",
+                "Silne wsparcie dla społeczności LGBT+.",
+                "Likwidacja Senatu RP."
+            ],
+            pochwaly: [
+                "Konsekwencja w głoszeniu lewicowych poglądów (ochrona usług publicznych).",
+                "Wyrazisty, często antyklerykalny profil polityczny przyciąga specyficzny elektorat.",
+                "Bogate doświadczenie polityczne (posłanka na Sejm, PE).",
+                "Podkreślanie kluczowej roli państwa w zapewnianiu usług i bezpieczeństwa socjalnego."
+            ],
+            krytyka: [
+                "Kontrowersyjne wypowiedzi nt. sytuacji międzynarodowej (np. 'wojny nie będzie', 'Rosjanie przestali zajmować nowe tereny w Ukrainie, trwają rozmowy pokojowe' – odbierane jako naiwność, brak realizmu lub dezinformacja).",
+                "Sceptyczne podejście do zwiększania wydatków na obronność (krytyka 5% PKB) – niepopularne, zarzuty osłabiania potencjału obronnego.",
+                "Niskie notowania w sondażach."
+            ],
+            skandale: [
+                "Brak informacji o skandalach korupcyjnych czy obyczajowych.",
+                "Kontrowersje wynikają z wyrazistych, nonkonformistycznych i niekiedy niepopularnych poglądów (polityka międzynarodowa, obronność, rola Kościoła)."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=JS"
+        },
+        {
+            id: "stanowski",
+            numerNaKarcie: "10",
+            nazwiskoImiona: "STANOWSKI Krzysztof Jakub",
+            wiek: "Brak danych",
+            partia: "Kandydat niezależny",
+            program: [
+                "Hasło: 'Zero konkretów'.",
+                "Otwarcie przyznaje, że nie ma szczegółowego programu wyborczego.",
+                "Deklaruje brak odpowiednich kompetencji do sprawowania urzędu Prezydenta RP.",
+                "Cel kandydatury: zebranie 100 tys. podpisów, uzyskanie prawa do materiałów wyborczych w TVP i udziału w debatach.",
+                "Chce pokazać od środka, jak wygląda kampania prezydencka, zdemaskować jej mechanizmy i absurdy.",
+                "Oferuje 'dobrą zabawę' i krytyczne spojrzenie na politykę.",
+                "Publikacja '12 wizji Polski' – bardziej subiektywne podsumowanie kampanii niż spójny program."
+            ],
+            pochwaly: [
+                "Ceniony za postrzeganą autentyczność, odwagę w kwestionowaniu schematów, nietypowe, antysystemowe podejście.",
+                "Działalność odbierana jako próba demaskowania hipokryzji i absurdów polityki oraz mediów.",
+                "Może przyciągać wyborców rozczarowanych tradycyjnymi partiami ('elektorat buntu').",
+                "Może wpływać na wyniki innych kandydatów (blokowanie lub odbieranie głosów).",
+                "Pewne, choć ograniczone, poparcie w sondażach."
+            ],
+            krytyka: [
+                "Całkowity brak programu wyborczego, publiczne przyznawanie się do braku kompetencji – dyskwalifikujące, brak powagi.",
+                "Krytyka Kanału Zero: promowanie 'chłopskiego rozumu', brak merytorycznych treści, niedostateczna reprezentacja kobiet-ekspertek.",
+                "Konfrontacyjny, agresywny styl dyskusji (np. atak na prowadzącą debatę w TVP).",
+                "Traktowanie kampanii jako 'zabawy', performansu – niepoważne, lekceważące podejście do urzędu."
+            ],
+            skandale: [
+                "'Afera Natalii Janoszek' (lato 2023) – demaskowanie rzekomej kariery celebrytki; działalność publicystyczna, nie skandal polityczny.",
+                "Podczas kampanii: aktywne konfrontacje (np. atak na Nawrockiego ws. 'afery z kawalerką') – element 'show' i strategii na kontrowersje.",
+                "Trudno mówić o typowych skandalach politycznych/korupcyjnych ze względu na 'anty-polityczny' charakter kandydatury."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=KS"
+        },
+        {
+            id: "trzaskowski",
+            numerNaKarcie: "11",
+            nazwiskoImiona: "TRZASKOWSKI Rafał Kazimierz",
+            wiek: 53,
+            partia: "Platforma Obywatelska RP (kandydat Koalicji Obywatelskiej)",
+            program: [
+                "'Plan na Polskę' – 5 bloków:",
+                "1. Nowy Centralny Okręg Przemysłowy: inwestycje na Podkarpaciu (infrastruktura, zbrojeniówka, energetyka, firmy, ośrodki innowacji, infrastruktura społeczna, schrony).",
+                "2. Pakt dla Bezpieczeństwa: bezpieczeństwo narodowe poza sporem politycznym, regularne RBN, wydatki na obronność 5% PKB, Centrum 'Druga Misja' (weterani), min. 50% środków na modernizację armii w polskim przemyśle.",
+                "3. Patriotyzm Gospodarczy: promocja polskich firm za granicą, uproszczenie prawa, wsparcie MŚP, rozwój przemysłu zbrojeniowego i technologicznego, ochrona rolników, wzmocnienie pozycji Polski w Europie (innowacje, badania), niezależność energetyczna (OZE).",
+                "4. Zdrowy rozsądek w życiu społecznym: ograniczenie 800+ dla Ukraińców (tylko pracujący i mieszkający w PL), liberalizacja prawa aborcyjnego, wsparcie in vitro, 'zero tolerancji' dla przestępczości, równy dostęp do usług publicznych, ochrona tożsamości regionalnej. Likwidacja Funduszu Kościelnego, ustawowy dostęp do 'pigułki dzień po'.",
+                "5. Prezydencki Fundusz Inwestycyjny: 2 mld zł rocznie na rozwój regionów (decyzje po konsultacjach, na infrastrukturę, miejsca pracy)."
+            ],
+            pochwaly: [
+                "Bogate doświadczenie samorządowe (prezydent Warszawy) – dowód kompetencji zarządczych.",
+                "Odbierany jako kandydat proeuropejski, zorientowany w sprawach międzynarodowych, umiejący budować relacje.",
+                "Program (inwestycje gospodarcze + liberalizm społeczny) ma potencjał przyciągnięcia szerokiego elektoratu (centrum, progresywni).",
+                "Zdolność do mobilizacji dużych grup wyborców, wysokie notowania w sondażach.",
+                "CBOS 2020: chwalony za reprezentowanie bliskiej opcji politycznej, liberalizm światopoglądowy, dążenie do zgody, dobry program, kompetencję, elokwencję, merytoryczne argumentowanie.",
+                "Akcentowanie wartości: solidarność, empatia, uczciwość."
+            ],
+            krytyka: [
+                "Rzekome 'oderwanie od rzeczywistości zwykłych ludzi', wizerunek polityka z elity.",
+                "Krytyka zarządzania Warszawą (np. zmiany bonifikat za przekształcenie użytkowania wieczystego – wycofał się).",
+                "Zarzuty PiS o wykorzystywanie delegacji służbowych do prekampanii, 'rozdawanie radiowozów' z publicznych środków.",
+                "'Ewidentny błąd sztabu' – upublicznienie danych osobowych p. Jerzego Ż. (z 'afery mieszkaniowej' Nawrockiego).",
+                "Krytyka książki-wywiadu 'Rafał' za autopromocję."
+            ],
+            skandale: [
+                "Zawiadomienie do prokuratury przez PiS (wrzesień 2023 / początek 2025) – podejrzenie przekroczenia uprawnień, poświadczenia nieprawdy (finansowanie prekampanii z publicznych środków).",
+                "Doniesienia o 'aferze korupcyjnej' (wrzesień 2023) – zawiadomienie o podejrzeniu przestępstwa (niejasne szczegóły).",
+                "Upublicznienie danych osobowych Jerzego Ż. (maj 2025) – przyznanie 'błędu sztabu'.",
+                "Podejrzenia o nielegalne finansowanie kampanii przez Fundację Akcja Demokracja (maj 2025) – zarzuty Mentzena, fundacja i Trzaskowski zaprzeczają powiązaniom.",
+                "Wcześniejsze problemy (awarie 'Czajki') mogą być przypominane."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=RT"
+        },
+        {
+            id: "woch",
+            numerNaKarcie: "Brak danych",
+            nazwiskoImiona: "WOCH Marek Marian",
+            wiek: "Brak danych",
+            partia: "Bezpartyjni Samorządowcy (poparcie m.in. Alternatywy Społecznej, Partii Pracy, Związku Słowiańskiego)",
+            program: [
+                "3 główne zagadnienia: system prezydencko-parlamentarny, bezpieczeństwo narodowe, 'sprawiedliwy świat pracy'.",
+                "Zmiana ustroju na prezydencko-parlamentarny, funkcja wiceprezydenta.",
+                "Polska Gwardia Narodowa (bezpieczeństwo wewnętrzne, podległa prezydentowi).",
+                "Kompleksowe bezpieczeństwo narodowe (obronność, zdrowie, żywność, prawo, energia, środowisko). Wzmocnienie armii (nowoczesne technologie), systemu opieki zdrowotnej, wsparcie rolników, rezerwa żywności, niezależność energetyczna, dbałość o środowisko, pozytywny wizerunek Polski.",
+                "'Sprawiedliwy świat pracy': minimalne płace życiowe, wzmocnienie związków zawodowych, elastyczne formy zatrudnienia, inwestycje w edukację i kwalifikacje.",
+                "Abolicja ZUS (jedna z pierwszych decyzji).",
+                "Likwidacja zapaści w ochronie zdrowia (likwidacja NFZ, samorządowa służba zdrowia).",
+                "Decentralizacja i demokratyzacja edukacji, podniesienie prestiżu nauczyciela.",
+                "Wsparcie młodych rodziców (dopłaty do wynajmu, 'przedszkola w pracy').",
+                "Obniżenie podatków i danin, uwolnienie przedsiębiorczości.",
+                "Bezpłatna komunikacja miejska i regionalna.",
+                "Walka z korupcją w samorządach i partiach, zakończenie 'dwupodziału władzy wg ustaleń w Magdalence'."
+            ],
+            pochwaly: [
+                "Postulaty wzmocnienia samorządów i decentralizacji (zgodne z ideą BS).",
+                "Wiele konkretnych propozycji (ochrona zdrowia, transport) – próba kompleksowego podejścia.",
+                "Prezentuje się jako kandydat spoza głównego nurtu, krytykujący system i 'układ magdalenkowy'.",
+                "Odwołania do doświadczenia zawodowego (hydraulik), deklaracje 'oczyszczenia szamba' w polityce mogą trafiać do rozczarowanych elitami."
+            ],
+            krytyka: [
+                "Niska rozpoznawalność, niewielkie poparcie w sondażach – kandydat marginalny.",
+                "Wielokrotne niepowodzenia w wyborach (wójt, parlament krajowy i europejski) – ograniczone poparcie społeczne.",
+                "Krytyka mediów publicznych za ignorowanie jego kandydatury – próba usprawiedliwienia słabych wyników.",
+                "Niektóre wypowiedzi mogą być odbierane jako mało konkretne lub populistyczne."
+            ],
+            skandale: [
+                "Brak informacji o poważnych skandalach korupcyjnych, obyczajowych czy prawnych.",
+                "Publiczne wypowiedzi (likwidacja ZUS, krytyka systemu) wpisują się w program, nie stanowią skandali."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=MW"
+        },
+        {
+            id: "zandberg",
+            numerNaKarcie: "Brak danych",
+            nazwiskoImiona: "ZANDBERG Adrian Tadeusz",
+            wiek: "Brak danych",
+            partia: "Partia Razem",
+            program: [
+                "'Pakt dla zdrowia': 8% PKB na bezpłatną publiczną opiekę medyczną. Walka z korupcją lekarzy (albo państwowy szpital, albo prywatna praktyka). Budowa polskich fabryk farmaceutycznych (uniezależnienie od importu). Sprzeciw prywatyzacji służby zdrowia (weto dla takich ustaw).",
+                "Inwestycje w odbudowę i rozwój polskich zdolności produkcyjnych (przemysł chemiczny, farmaceutyczny, hutnictwo) – uniezależnienie od łańcuchów dostaw.",
+                "Polska powinna rozwijać własny przemysł (bez niego nie ma silnego przemysłu zbrojeniowego). Zwiększenie krajowej produkcji amunicji, nowoczesny sprzęt dla żołnierzy.",
+                "Sceptycyzm wobec szybkiego przyjęcia euro ('obecnie się nie opłaca').",
+                "Działania na rzecz równości kobiet i mężczyzn.",
+                "Wprowadzenie prawa do legalnej i bezpiecznej aborcji.",
+                "Zapewnienie szacunku dla mniejszości.",
+                "Budowa świeckiego państwa."
+            ],
+            pochwaly: [
+                "Konsekwentne głoszenie lewicowych i prospołecznych poglądów (silna publiczna służba zdrowia, edukacja, prawa pracownicze).",
+                "Krytyka neoliberalizmu, postulat wzmocnienia roli państwa w gospodarce – alternatywa dla dominującego dyskursu.",
+                "Postrzegany jako inteligentny, elokwentny mówca, celnie diagnozujący problemy społeczne.",
+                "Krytyczne stanowisko wobec rządu Tuska (kontynuacja praktyk PiS np. w spółkach Skarbu Państwa) – dowód niezależności i pryncypialności."
+            ],
+            krytyka: [
+                "Zbytnią pryncypialność, brak gotowości do kompromisów (przyczyna opuszczenia przez Razem klubu Lewicy).",
+                "Zarzuty bycia 'zawsze przeciw', braku wystarczająco pozytywnych propozycji, skupianie się na krytyce.",
+                "Postulaty znacznego zwiększenia wydatków publicznych i roli państwa krytykowane jako nierealistyczne i potencjalnie szkodliwe.",
+                "Retoryka może być odbierana jako zbyt konfrontacyjna i pesymistyczna ('zawsze niezadowolona mina')."
+            ],
+            skandale: [
+                "Brak informacji o skandalach korupcyjnych czy obyczajowych.",
+                "Konflikt wewnątrz Lewicy, opuszczenie przez Razem wspólnego klubu parlamentarnego (spór m.in. o budżet 2025, dyscyplinę głosowania).",
+                "Aktywne komentowanie 'afery ze spotami' (wezwanie Tuska do wyjaśnień ws. finansowania kampanii Trzaskowskiego) – reakcja na działania innych."
+            ],
+            zdjecie: "https://placehold.co/150x150/e2e8f0/475569?text=AZ"
+        }
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const sections = document.querySelectorAll('.content-section');
+        const navButtons = document.querySelectorAll('.nav-button');
+        const candidateListContainer = document.getElementById('candidate-list');
+        const candidateDetailModal = document.getElementById('candidate-detail-modal');
+        const candidateDetailName = document.getElementById('candidate-detail-name');
+        const candidateDetailContent = document.getElementById('candidate-detail-content');
+        const closeCandidateDetailButton = document.getElementById('close-candidate-detail');
+
+        function showSection(sectionId) {
+            sections.forEach(section => {
+                if (section.id === sectionId) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            });
+            navButtons.forEach(button => {
+                if (button.dataset.section === sectionId) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+            window.scrollTo(0, 0);
+        }
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                showSection(button.dataset.section);
+            });
+        });
+
+        function createAccordionItem(title, contentArray, idSuffix) {
+            if (!contentArray || contentArray.length === 0) {
+                 return `<div class="border border-slate-200 rounded-md">
+                            <button class="accordion-button w-full text-left px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-t-md focus:outline-none flex justify-between items-center">
+                                <span class="font-semibold text-slate-700">${title}</span>
+                                <span class="arrow text-slate-500 text-xl">&#9660;</span>
+                            </button>
+                            <div class="accordion-content px-4 py-3 border-t border-slate-200 bg-white rounded-b-md">
+                                <p class="text-slate-600 italic">Brak szczegółowych informacji w raporcie.</p>
+                            </div>
+                        </div>`;
+            }
+            const listItems = contentArray.map(item => `<li class="text-slate-600">${item}</li>`).join('');
+            return `<div class="border border-slate-200 rounded-md">
+                        <button class="accordion-button w-full text-left px-4 py-3 bg-slate-100 hover:bg-slate-200 rounded-t-md focus:outline-none flex justify-between items-center">
+                            <span class="font-semibold text-slate-700">${title}</span>
+                            <span class="arrow text-slate-500 text-xl">&#9660;</span>
+                        </button>
+                        <div class="accordion-content px-4 py-3 border-t border-slate-200 bg-white rounded-b-md">
+                            <ul class="list-disc list-inside space-y-1">${listItems}</ul>
+                        </div>
+                    </div>`;
+        }
+        
+        function displayCandidateDetails(candidate) {
+            candidateDetailName.textContent = candidate.nazwiskoImiona;
+            let detailHtml = `
+                <div class="mb-3">
+                    <p><strong class="text-slate-700">Numer na karcie:</strong> ${candidate.numerNaKarcie !== "Brak danych" ? candidate.numerNaKarcie : "<em>Brak danych</em>"}</p>
+                    <p><strong class="text-slate-700">Wiek:</strong> ${candidate.wiek !== "Brak danych" ? candidate.wiek : "<em>Brak danych</em>"}</p>
+                    <p><strong class="text-slate-700">Partia/Poparcie:</strong> ${candidate.partia}</p>
+                </div>
+            `;
+            detailHtml += createAccordionItem("Kluczowe punkty programu wyborczego", candidate.program, "program");
+            detailHtml += createAccordionItem("Za co chwalą wyborcy", candidate.pochwaly, "pochwaly");
+            detailHtml += createAccordionItem("Za co krytykują przeciwnicy", candidate.krytyka, "krytyka");
+            detailHtml += createAccordionItem("Najważniejsze kontrowersje i skandale", candidate.skandale, "skandale");
+
+            candidateDetailContent.innerHTML = detailHtml;
+            candidateDetailModal.classList.remove('hidden');
+
+            const accordionButtons = candidateDetailContent.querySelectorAll('.accordion-button');
+            accordionButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const content = button.nextElementSibling;
+                    button.classList.toggle('active');
+                    if (content.style.display === "block") {
+                        content.style.display = "none";
+                    } else {
+                        content.style.display = "block";
+                    }
+                });
+            });
+        }
+
+        candidateData.forEach(candidate => {
+            const card = document.createElement('div');
+            card.className = 'candidate-card bg-white p-4 rounded-lg shadow-lg cursor-pointer hover:shadow-xl flex flex-col items-center text-center';
+            card.innerHTML = `
+                <img src="${candidate.zdjecie}" alt="Zdjęcie kandydata ${candidate.nazwiskoImiona}" class="w-24 h-24 rounded-full mb-3 object-cover bg-slate-200">
+                <h4 class="text-lg font-semibold text-blue-600">${candidate.nazwiskoImiona}</h4>
+                <p class="text-sm text-slate-600">${candidate.partia}</p>
+                <p class="text-xs text-slate-500 mt-1">Numer na karcie: ${candidate.numerNaKarcie !== "Brak danych" ? candidate.numerNaKarcie : "<em>Brak danych</em>"}</p>
+            `;
+            card.addEventListener('click', () => displayCandidateDetails(candidate));
+            candidateListContainer.appendChild(card);
+        });
+
+        closeCandidateDetailButton.addEventListener('click', () => {
+            candidateDetailModal.classList.add('hidden');
+        });
+        
+        candidateDetailModal.addEventListener('click', (event) => {
+            if (event.target === candidateDetailModal) {
+                candidateDetailModal.classList.add('hidden');
+            }
+        });
+
+
+        const pollChartCtx = document.getElementById('pollsChart').getContext('2d');
+        const pollsChart = new Chart(pollChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['R. Trzaskowski (KO)', 'K. Nawrocki (PiS)', 'S. Mentzen (Konf.)', 'M. Biejat (NL) / Sz. Hołownia (TD)', 'A. Zandberg (Razem)', 'G. Braun (KKP)'],
+                datasets: [{
+                    label: 'Poparcie w sondażach (kwiecień-maj 2025, uśrednione wartości w %)',
+                    data: [31, 25, 14, 6.5, 5.5, 3], 
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(239, 68, 68, 0.7)',
+                        'rgba(249, 115, 22, 0.7)',
+                        'rgba(217, 70, 239, 0.7)',
+                        'rgba(163, 230, 53, 0.7)',
+                        'rgba(107, 114, 128, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(59, 130, 246, 1)',
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(249, 115, 22, 1)',
+                        'rgba(217, 70, 239, 1)',
+                        'rgba(163, 230, 53, 1)',
+                        'rgba(107, 114, 128, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Procent poparcia (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.x !== null) {
+                                    label += context.parsed.x + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+        showSection('candidates');
+    });
+</script>
+
+</body>
+</html>
